@@ -1,116 +1,109 @@
-/* Estilos generales para el cuerpo de la página */
 body {
-    font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; /* Fuentes similares a las de la imagen */
-    display: flex; /* Habilita Flexbox para la distribución de paneles */
-    min-height: 100vh; /* Ocupa el 100% del alto de la ventana */
+    font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; 
+    display: flex; 
+    min-height: 100vh; 
     margin: 0;
-    overflow: hidden; /* Evita barras de desplazamiento si la imagen es muy grande */
-    color: #333; /* Color de texto general por defecto */
+    overflow: hidden; 
+    color: #333; 
 }
 
 /* Panel Izquierdo (Contiene la imagen grande) */
 .left-panel {
     flex: 0 0 45%; /* Ocupa el 45% del ancho total de la pantalla */
-    /* La URL aquí es crucial. Ajusta la ruta a tu imagen. */
-    /* Ejemplo si la imagen está en la misma carpeta que style.css: url('image_dac33e.png') */
-    /* Ejemplo si la imagen está en la carpeta raíz (tu_proyecto_capital_humano): url('../image_dac33e.png') */
-    background-image: url('../images/login_imagen.jpg'); /* Ruta de ejemplo. AJUSTAR SEGÚN TU RUTA REAL. */
-    background-size:cover; /* La imagen cubre todo el área del panel */
-    background-position: center; /* Centra la imagen en el panel */
-    position: relative; /* Necesario para posicionar los puntos del slider */
-    display: flex; /* Para que los puntos del slider puedan alinearse al final */
-    align-items: flex-end; /* Alinea los puntos del slider a la parte inferior */
-    padding: 20px; /* Relleno para que los puntos no queden pegados al borde */
-    box-shadow: 2px 0 10px rgba(0,0,0,0.1); /* Sombra sutil en el borde derecho */
+    background-image: url('../images/login_imagen.jpg');
+    background-size:cover; 
+    background-position: center; 
+    position: relative; 
+    display: flex; 
+    align-items: flex-end; 
+    padding: 20px; 
+    box-shadow: 2px 0 10px rgba(0,0,0,0.1); 
 }
 
 /* Contenedor para los puntos del slider (en el panel izquierdo) */
 .slider-dots {
-    position: absolute; /* Posicionamiento absoluto dentro del .left-panel */
-    bottom: 20px; /* Distancia desde la parte inferior */
-    left: 50%; /* Centrado horizontalmente */
-    transform: translateX(-50%); /* Ajuste para un centrado perfecto */
-    display: flex; /* Para que los puntos se muestren en fila */
-    gap: 8px; /* Espacio entre cada punto */
+    position: absolute; 
+    bottom: 20px; 
+    left: 50%; 
+    transform: translateX(-50%); 
+    display: flex; 
+    gap: 8px; 
 }
 
 .dot {
     width: 10px;
     height: 10px;
-    background-color: rgba(255,255,255,0.5); /* Puntos semitransparentes */
-    border-radius: 50%; /* Forma circular */
-    border: 1px solid rgba(255,255,255,0.8); /* Borde blanco semitransparente */
+    background-color: rgba(255,255,255,0.5); 
+    border-radius: 50%; 
+    border: 1px solid rgba(255,255,255,0.8); 
     cursor: pointer; /* Indica que son interactivos (aunque no haya funcionalidad JS) */
 }
 
 .dot.active {
-    background-color: #fff; /* El punto activo es blanco sólido */
+    background-color: #fff; 
 }
 
 /* Panel Derecho (Contiene el formulario de login) */
 .right-panel {
-    flex: 1; /* Ocupa el espacio restante (55%) del ancho total */
-    display: flex; /* Habilita Flexbox para centrar el contenido del login */
-    justify-content: center; /* Centra el contenido horizontalmente */
-    align-items: center; /* Centra el contenido verticalmente */
-    background-color: #f2f7fc; /* Fondo azul claro similar al de la imagen */
-    padding: 20px; /* Relleno general para el panel */
-    flex-direction: column; /* Apila el logo, título, subtítulo y formulario verticalmente */
+    flex: 1; 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    background-color: #f2f7fc; 
+    padding: 20px;
+    flex-direction: column; 
 }
 
 /* Contenedor para el contenido principal del login dentro del panel derecho */
 .login-content {
     width: 100%;
-    max-width: 400px; /* Ancho máximo para el formulario y textos */
-    text-align: center; /* Centra el texto y el logo dentro de este contenedor */
-    padding: 30px; /* Relleno interno para el contenido */
-    /* No tiene fondo ni sombra de tarjeta, ya que es directamente parte del right-panel */
+    max-width: 400px; 
+    text-align: center; 
+    padding: 30px; 
 }
 
-/* Estilos del logo (Uganda Coat of Arms en la imagen) */
+/* Estilos del logo */
 .login-content .logo {
-    max-width: 120px; /* Tamaño máximo del logo */
-    margin-bottom: 30px; /* Espacio debajo del logo */
+    max-width: 120px; 
+    margin-bottom: 30px; 
 }
 
-/* Estilos del título principal (Welcome to Human Capital Management System) */
+/* Estilos del título principal */
 .login-content h2 {
-    font-size: 1.8rem; /* Tamaño de fuente */
-    font-weight: 400; /* Peso de la fuente (menos negrita, más ligero) */
-    color: #34495e; /* Color azul oscuro/gris para el título */
-    margin-bottom: 10px; /* Espacio debajo del título */
+    font-size: 1.8rem; 
+    font-weight: 400; 
+    color: #34495e; 
+    margin-bottom: 10px; 
 }
 
-/* Estilos del subtítulo (Please sign in with your credentials) */
+/* Estilos del subtítulo */
 .login-content p {
     font-size: 0.95rem;
-    color: #6c7e92; /* Color gris más claro */
-    margin-bottom: 30px; /* Espacio debajo del subtítulo */
+    color: #6c7e92; 
+    margin-bottom: 30px; 
 }
 
 /* Estilos de los campos de entrada (Usuario, Contraseña) */
 .form-control {
-    border-radius: 4px; /* Bordes ligeramente redondeados, como en la imagen */
-    padding: 12px 15px; /* Relleno interno para los campos */
-    border: 1px solid #ced4da; /* Borde estándar */
+    border-radius: 4px; 
+    padding: 12px 15px; 
+    border: 1px solid #ced4da; 
 }
 
 /* Estilos del campo de entrada al enfocarlo */
 .form-control:focus {
-    border-color: #8bbcdc; /* Azul más claro al enfocar */
-    box-shadow: 0 0 0 0.25rem rgba(139, 188, 220, 0.25); /* Sombra de enfoque sutil */
+    border-color: #8bbcdc; 
+    box-shadow: 0 0 0 0.25rem rgba(139, 188, 220, 0.25); 
 }
 
 /* Estilos del botón de Login */
 .btn-primary {
-    background-color: #007bff; /* Azul vibrante similar al de la imagen */
+    background-color: #007bff;
     border-color: #007bff;
-    padding: 12px 25px; /* Relleno del botón */
-    border-radius: 4px; /* Bordes redondeados */
+    padding: 12px 25px; 
+    border-radius: 4px; 
     font-size: 1rem;
     font-weight: 500;
-    /* width: 100%; ya cubierto por d-grid de Bootstrap */
-    /* margin-bottom: no es necesario aquí */
 }
 
 /* Efecto hover para el botón */
@@ -121,7 +114,7 @@ body {
 
 /* Estilos del mensaje de error */
 .error-message {
-    color: #dc3545; /* Rojo de error estándar */
+    color: #dc3545; 
     margin-top: 15px;
     font-weight: 500;
     font-size: 0.9rem;
@@ -130,17 +123,17 @@ body {
 /* Media Queries para responsividad (para que el diseño se adapte a diferentes tamaños de pantalla) */
 @media (max-width: 768px) {
     body {
-        flex-direction: column; /* Apila los paneles verticalmente en pantallas pequeñas */
+        flex-direction: column; 
     }
     .left-panel {
-        flex: none; /* Desactiva el flex-grow */
-        height: 250px; /* Altura fija para la imagen en dispositivos móviles */
-        width: 100%; /* Ocupa el 100% del ancho */
+        flex: none; 
+        height: 250px; 
+        width: 100%; 
     }
     .right-panel {
-        padding: 30px 20px; /* Ajusta el padding en pantallas pequeñas */
+        padding: 30px 20px; 
     }
     .login-content {
-        max-width: 100%; /* Ocupa todo el ancho disponible */
+        max-width: 100%; 
     }
 }
