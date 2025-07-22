@@ -1,13 +1,14 @@
 <?php
 session_start();
 
-if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true || $_SESSION["username"] !== 'admin') {
+require_once '../config.php';
+require_once 'funciones.php';
+
+// Verificar si el usuario es administrador
+if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true || !esAdministrador()) {
     header("location: ../index.php");
     exit;
 }
-
-require_once '../config.php';
-require_once 'funciones.php';
 
 $nombre_usuario = $contrasena = $confirm_contrasena = "";
 $nombre_usuario_err = $contrasena_err = $confirm_contrasena_err = $rol_err = "";
@@ -36,7 +37,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     $nombre_usuario = trim($_POST["nombre_usuario"]);
                 }
             } else {
-                echo "¡Ups! Algo salió mal. Por favor, inténtelo de nuevo más tarde.";
+                echo "¡Ups! Algo salió mal al verificar el usuario.";
             }
             mysqli_stmt_close($stmt);
         }
@@ -66,7 +67,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $rol_err = "Por favor seleccione un rol válido.";
     } else {
         $id_rol = (int)$_POST["id_rol"];
-        // Opcional: verificar que el id_rol realmente existe en la tabla roles
     }
 
     // Si no hay errores, intentar insertar el usuario
@@ -75,7 +75,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             header("location: index.php?msg=creado");
             exit();
         } else {
-            echo '<div class="alert alert-danger">Error al crear el usuario. Por favor, inténtelo de nuevo.</div>';
+            echo '<div class="alert alert-danger">Error al crear el usuario. Puede que el nombre de usuario ya exista.</div>';
         }
     }
     mysqli_close($link);
@@ -91,21 +91,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link rel="stylesheet" href="../css/style.css">
     <style>
-        body {
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
-        .content-wrapper {
-            flex: 1;
-            padding-bottom: 50px;
-        }
-        .form-group {
-            margin-bottom: 1rem;
-        }
-        .invalid-feedback {
-            display: block; /* Asegura que los mensajes de error se muestren */
-        }
+        body { display: flex; flex-direction: column; min-height: 100vh; }
+        .content-wrapper { flex: 1; padding-bottom: 50px; }
+        .form-group { margin-bottom: 1rem; }
+        .invalid-feedback { display: block; }
     </style>
 </head>
 <body>
@@ -117,13 +106,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    <li class="nav-item">
-                        <a class="nav-link" href="../home.php">Home</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link active" aria-current="page" href="index.php">Módulo de Usuarios</a>
-                    </li>
-                    </ul>
+                    <li class="nav-item"><a class="nav-link" href="../home.php">Home</a></li>
+                    <li class="nav-item"><a class="nav-link active" aria-current="page" href="index.php">Módulo de Usuarios</a></li>
+                </ul>
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -180,8 +165,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     </div>
 
     <?php
-    if (class_exists('Footer')) {
-        $footer = new Footer();
+    if (class_exists('FooterView')) {
+        $footer = new FooterView();
         $footer->render();
     } else {
         echo '<footer class="footer">';

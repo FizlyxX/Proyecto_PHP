@@ -13,12 +13,12 @@ if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true || !esAdmini
 if (isset($_GET["id"]) && !empty(trim($_GET["id"]))) {
     $id = trim($_GET["id"]);
 
-    // Usar la función desactivarUsuario (que está en funciones.php)
-    if (desactivarUsuario($link, $id)) {
-        header("location: index.php?msg=desactivado");
+    // Usar la función activarUsuario (que está en funciones.php)
+    if (activarUsuario($link, $id)) {
+        header("location: index.php?msg=activado");
         exit();
     } else {
-        echo "¡Ups! Algo salió mal al intentar desactivar el usuario.";
+        echo "¡Ups! Algo salió mal al intentar activar el usuario.";
     }
 } else {
     header("location: index.php");
