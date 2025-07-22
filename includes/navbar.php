@@ -36,16 +36,16 @@ if (!isset($current_page)) {
                 <?php endif; ?>
 
                 <li class="nav-item">
-                    <a class="nav-link <?php echo ($current_page == 'colaboradores') ? 'active' : ''; ?>" href="#">Módulo de Colaboradores</a>
+                    <a class="nav-link <?php echo ($current_page == 'colaboradores') ? 'active' : ''; ?>" href="<?php echo $base_url; ?>colaboradores/index.php">Módulo de Colaboradores</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link <?php echo ($current_page == 'cargos') ? 'active' : ''; ?>" href="#">Módulo de Cargos</a>
+                    <a class="nav-link" href="#">Módulo de Cargos</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link <?php echo ($current_page == 'reportes') ? 'active' : ''; ?>" href="#">Reportes</a>
+                    <a class="nav-link" href="#">Reportes</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link <?php echo ($current_page == 'vacaciones') ? 'active' : ''; ?>" href="#">Vacaciones</a>
+                    <a class="nav-link" href="#">Vacaciones</a>
                 </li>
 
             </ul>
