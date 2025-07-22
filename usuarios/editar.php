@@ -3,30 +3,32 @@ session_start();
 
 require_once '../config.php';
 require_once 'funciones.php';
+require_once '../classes/Footer.php';
 
-// Verificar si el usuario es administrador
+// Verificar si el usuario ha iniciado sesión y es administrador
 if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true || !esAdministrador()) {
     header("location: ../index.php");
     exit;
 }
 
+// Definir la página actual para que el navbar la resalte
+$current_page = 'usuarios';
+
+// Incluir la barra de navegación reusable
+require_once '../includes/navbar.php'; 
+
 $id = $nombre_usuario = $contrasena = $confirm_contrasena = "";
 $nombre_usuario_err = $contrasena_err = $confirm_contrasena_err = $rol_err = "";
-$id_rol = ''; // Variable para el rol seleccionado
+$id_rol = '';
 
-// Obtener los roles para el select
 $roles = getRoles($link);
 
-// Procesar el formulario cuando se envía
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    // Obtener el ID del usuario a editar
     $id = $_POST["id"];
 
-    // Validar nombre de usuario
     if (empty(trim($_POST["nombre_usuario"]))) {
         $nombre_usuario_err = "Por favor ingrese un nombre de usuario.";
     } else {
-        // Verificar si el nombre de usuario ya existe para otro usuario (excluyendo el actual)
         $sql = "SELECT id FROM usuarios WHERE nombre_usuario = ? AND id != ?";
         if ($stmt = mysqli_prepare($link, $sql)) {
             mysqli_stmt_bind_param($stmt, "si", $param_nombre_usuario, $param_id);
@@ -46,15 +48,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
     }
 
-    // Validar contraseña (opcional, solo si se cambia)
     $contrasena_nueva = trim($_POST["contrasena"]);
     $confirm_contrasena = trim($_POST["confirm_contrasena"]);
 
-    if (!empty($contrasena_nueva)) { // Si se ingresó una nueva contraseña
+    if (!empty($contrasena_nueva)) {
         if (strlen($contrasena_nueva) < 6) {
             $contrasena_err = "La contraseña debe tener al menos 6 caracteres.";
         } else {
-            $contrasena = $contrasena_nueva; // Asignar para la actualización
+            $contrasena = $contrasena_nueva;
         }
 
         if (empty($confirm_contrasena)) {
@@ -64,14 +65,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
     }
 
-    // Validar Rol
     if (empty($_POST["id_rol"]) || !is_numeric($_POST["id_rol"])) {
         $rol_err = "Por favor seleccione un rol válido.";
     } else {
         $id_rol = (int)$_POST["id_rol"];
     }
 
-    // Si no hay errores, intentar actualizar el usuario
     if (empty($nombre_usuario_err) && empty($contrasena_err) && empty($confirm_contrasena_err) && empty($rol_err)) {
         if (actualizarUsuario($link, $id, $nombre_usuario, $contrasena, $id_rol)) {
             header("location: index.php?msg=actualizado");
@@ -82,7 +81,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
     mysqli_close($link);
 
-} else { // Si no es un POST, cargar los datos del usuario para edición
+} else {
     if (isset($_GET["id"]) && !empty(trim($_GET["id"]))) {
         $id = trim($_GET["id"]);
         $usuario_data = getUsuarioById($link, $id);
@@ -90,14 +89,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if ($usuario_data) {
             $nombre_usuario = $usuario_data['nombre_usuario'];
             $id_rol = $usuario_data['id_rol'];
-            // No cargamos la contraseña por seguridad
         } else {
-            // Usuario no encontrado, redirigir
             header("location: index.php");
             exit();
         }
     } else {
-        // ID no proporcionado, redirigir
         header("location: index.php");
         exit();
     }
@@ -118,36 +114,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         .content-wrapper { flex: 1; padding-bottom: 50px; }
         .form-group { margin-bottom: 1rem; }
         .invalid-feedback { display: block; }
+        .footer { 
+            background-color: #f8f9fa;
+            border-top: 1px solid #e9ecef;
+            text-align: center;
+            padding: 20px;
+            color: #6c757d;
+            font-size: 0.9rem;
+            width: 100%;
+        }
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="../home.php">Capital Humano</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    <li class="nav-item"><a class="nav-link" href="../home.php">Home</a></li>
-                    <li class="nav-item"><a class="nav-link active" aria-current="page" href="index.php">Módulo de Usuarios</a></li>
-                </ul>
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <?php echo htmlspecialchars($_SESSION["username"]); ?>
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                            <li><a class="dropdown-item" href="#">Mi Perfil</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="../logout.php">Cerrar Sesión</a></li>
-                        </ul>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </nav>
-
     <div class="container mt-4 content-wrapper">
         <h2>Editar Usuario</h2>
         <p>Modifique los datos del usuario.</p>
@@ -189,8 +167,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     </div>
 
     <?php
-    if (class_exists('FooterView')) {
-        $footer = new FooterView();
+    if (class_exists('Footer')) {
+        $footer = new Footer();
         $footer->render();
     } else {
         echo '<footer class="footer">';

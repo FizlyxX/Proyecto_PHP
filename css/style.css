@@ -1,99 +1,155 @@
+/*
+ * Archivo: style.css
+ * Contiene todos los estilos CSS para el proyecto de Capital Humano.
+ * Incluye estilos para el login, estilos generales del body y el footer,
+ * y reglas para el desplazamiento del contenido en páginas de módulos.
+ */
+
+/* ===================================================================== */
+/* ESTILOS GLOBALES Y DE LAYOUT (APLICABLES A TODAS LAS PÁGINAS) */
+/* ===================================================================== */
+
 body {
-    font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; 
-    display: flex; 
-    min-height: 100vh; 
+    font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
     margin: 0;
-    overflow: hidden; 
-    color: #333; 
+    color: #333;
+    display: flex;             
+    flex-direction: column;    
+    min-height: 100vh;         
+    overflow-x: hidden;      
+    
 }
 
-/* Panel Izquierdo (Contiene la imagen grande) */
+.content, .content-wrapper {
+    flex: 1;                  
+    overflow-y: auto;         
+    padding: 20px 15px;       
+}
+
+.footer {
+    background-color: #f8f9fa;
+    border-top: 1px solid #e9ecef;
+    text-align: center;
+    padding: 20px;
+    color: #6c757d;
+    font-size: 0.9rem;
+    width: 100%; 
+
+}
+
+/* Estilos para los badges de estado (Activo/Inactivo) en tablas */
+.status-badge {
+    padding: .3em .6em;
+    border-radius: .25rem;
+    font-size: 0.85em;
+    font-weight: bold;
+    display: inline-block;
+}
+.status-badge.active {
+    background-color: #28a745; /* Verde Bootstrap */
+    color: white;
+}
+.status-badge.inactive {
+    background-color: #dc3545; /* Rojo Bootstrap */
+    color: white;
+}
+
+/* ===================================================================== */
+/* ESTILOS ESPECÍFICOS PARA EL MÓDULO DE LOGIN (index.php) */
+/* ===================================================================== */
+
+.login-wrapper {
+    display: flex;             
+    width: 100%;
+    flex: 1;
+}
+
+/* Panel Izquierdo del Login (Imagen grande de fondo) */
 .left-panel {
-    flex: 0 0 45%; /* Ocupa el 45% del ancho total de la pantalla */
+    flex: 0 0 45%; /* Ocupa el 45% del ancho total */
     background-image: url('../images/login_image1.jpg');
-    background-size:cover; 
-    background-position: center; 
-    position: relative; 
-    display: flex; 
-    align-items: flex-end; 
-    padding: 20px; 
-    box-shadow: 2px 0 10px rgba(0,0,0,0.1); 
+    background-position: center;
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    padding: 20px;
+    box-shadow: 2px 0 10px rgba(0,0,0,0.1);
 }
 
-/* Contenedor para los puntos del slider (en el panel izquierdo) */
+/* Contenedor para los puntos del slider (en el panel izquierdo del login) */
 .slider-dots {
-    position: absolute; 
-    bottom: 20px; 
-    left: 50%; 
-    transform: translateX(-50%); 
-    display: flex; 
-    gap: 8px; 
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 8px;
 }
 
 .dot {
     width: 10px;
     height: 10px;
-    background-color: rgba(255,255,255,0.5); 
-    border-radius: 50%; 
-    border: 1px solid rgba(255,255,255,0.8); 
-    cursor: pointer; /* Indica que son interactivos (aunque no haya funcionalidad JS) */
+    background-color: rgba(255,255,255,0.5);
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.8);
+    cursor: pointer;
 }
 
 .dot.active {
-    background-color: #fff; 
+    background-color: #fff;
 }
 
-/* Panel Derecho (Contiene el formulario de login) */
+/* Panel Derecho del Login (Contiene el formulario de login) */
 .right-panel {
-    flex: 1; 
-    display: flex; 
-    justify-content: center; 
-    align-items: center; 
-    background-color: #f2f7fc; 
+    flex: 1; /* Ocupa el espacio restante (55%) */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #f2f7fc;
     padding: 20px;
-    flex-direction: column; 
+    flex-direction: column;
 }
 
 /* Contenedor para el contenido principal del login dentro del panel derecho */
 .login-content {
     width: 100%;
-    max-width: 400px; 
-    text-align: center; 
-    padding: 30px; 
+    max-width: 400px;
+    text-align: center;
+    padding: 30px;
 }
 
-/* Estilos del logo */
+/* Estilos del logo en el login */
 .login-content .logo {
-    max-width: 120px; 
-    margin-bottom: 30px; 
+    max-width: 120px;
+    margin-bottom: 30px;
 }
 
-/* Estilos del título principal */
+/* Estilos del título principal en el login */
 .login-content h2 {
-    font-size: 1.8rem; 
-    font-weight: 400; 
-    color: #34495e; 
-    margin-bottom: 10px; 
+    font-size: 1.8rem;
+    font-weight: 400;
+    color: #34495e;
+    margin-bottom: 10px;
 }
 
-/* Estilos del subtítulo */
+/* Estilos del subtítulo en el login */
 .login-content p {
     font-size: 0.95rem;
-    color: #6c7e92; 
-    margin-bottom: 30px; 
+    color: #6c7e92;
+    margin-bottom: 30px;
 }
 
-/* Estilos de los campos de entrada (Usuario, Contraseña) */
+/* Estilos de los campos de entrada (Usuario, Contraseña) en el login */
 .form-control {
-    border-radius: 4px; 
-    padding: 12px 15px; 
-    border: 1px solid #ced4da; 
+    border-radius: 4px;
+    padding: 12px 15px;
+    border: 1px solid #ced4da;
 }
 
-/* Estilos del campo de entrada al enfocarlo */
+/* Estilos del campo de entrada al enfocarlo en el login */
 .form-control:focus {
-    border-color: #8bbcdc; 
-    box-shadow: 0 0 0 0.25rem rgba(139, 188, 220, 0.25); 
+    border-color: #8bbcdc;
+    box-shadow: 0 0 0 0.25rem rgba(139, 188, 220, 0.25);
 }
 
 /* Estilos del botón de Login */
@@ -108,39 +164,94 @@ body {
     box-shadow: 0 4px 15px rgba(0, 105, 217, 0.3);
 }
 
+/* Efecto hover para el botón de login */
 .btn-primary:hover {
     background-color: #0056b3;
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(0, 86, 179, 0.4);
 }
 
-.btn-primary:active {
-    transform: scale(0.97);
-    box-shadow: 0 2px 8px rgba(0, 86, 179, 0.2);
-}
 
-/* Estilos del mensaje de error */
+/* Estilos del mensaje de error en el login */
 .error-message {
-    color: #dc3545; 
+    color: #dc3545;
     margin-top: 15px;
     font-weight: 500;
     font-size: 0.9rem;
 }
 
-/* Media Queries para responsividad (para que el diseño se adapte a diferentes tamaños de pantalla) */
+/* ===================================================================== */
+/* ESTILOS ESPECÍFICOS DE LOS MÓDULOS DE CRUD (COLABORADORES, USUARIOS, ROLES) */
+/* ===================================================================== */
+
+/* Estilos para miniaturas de fotos en tablas (Módulo Colaboradores) */
+.photo-thumbnail {
+    width: 50px;
+    height: 50px;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 1px solid #ddd;
+}
+
+/* Estilos para vista previa de fotos en formularios de edición (Módulo Colaboradores) */
+.current-file-preview {
+    max-width: 150px;
+    max-height: 150px;
+    margin-top: 10px;
+    display: block;
+    border: 1px solid #ddd;
+    padding: 5px;
+    border-radius: 5px;
+}
+.current-pdf-link {
+    margin-top: 10px;
+    display: inline-block;
+}
+
+/* Estilos para la página de detalles del colaborador (ver.php) */
+.detail-photo {
+    max-width: 200px;
+    max-height: 200px;
+    object-fit: cover;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+    margin-bottom: 20px;
+}
+.detail-card {
+    border: 1px solid #eee;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    background-color: #fff;
+}
+.detail-label {
+    font-weight: bold;
+    color: #555;
+}
+
+/* ===================================================================== */
+/* MEDIA QUERIES (PARA RESPONSIVIDAD) */
+/* ===================================================================== */
+
 @media (max-width: 768px) {
-    body {
-        flex-direction: column; 
+    /* Las reglas para .login-wrapper en pantallas pequeñas */
+    body > .login-wrapper { /* Específico para el wrapper en el index (login) */
+        flex-direction: column;
     }
     .left-panel {
-        flex: none; 
-        height: 250px; 
-        width: 100%; 
+        flex: none;
+        height: 250px;
+        width: 100%;
     }
     .right-panel {
-        padding: 30px 20px; 
+        padding: 30px 20px;
     }
     .login-content {
-        max-width: 100%; 
+        max-width: 100%;
+    }
+
+    /* Ajustes generales para el contenido en pantallas pequeñas */
+    .content, .content-wrapper {
+        padding: 15px; /* Menos padding en móvil */
     }
 }
