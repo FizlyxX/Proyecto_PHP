@@ -50,6 +50,15 @@ mysqli_close($link);
         body { display: flex; flex-direction: column; min-height: 100vh; }
         .content-wrapper { flex: 1; padding-bottom: 50px; }
         .table-responsive { margin-top: 20px; }
+        .footer { 
+            background-color: #f8f9fa;
+            border-top: 1px solid #e9ecef;
+            text-align: center;
+            padding: 20px;
+            color: #6c757d;
+            font-size: 0.9rem;
+            width: 100%;
+        }
     </style>
 </head>
 <body>

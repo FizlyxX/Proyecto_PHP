@@ -114,6 +114,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         .content-wrapper { flex: 1; padding-bottom: 50px; }
         .form-group { margin-bottom: 1rem; }
         .invalid-feedback { display: block; }
+        .footer { 
+            background-color: #f8f9fa;
+            border-top: 1px solid #e9ecef;
+            text-align: center;
+            padding: 20px;
+            color: #6c757d;
+            font-size: 0.9rem;
+            width: 100%;
+        }
     </style>
 </head>
 <body>

@@ -52,6 +52,15 @@ mysqli_close($link);
         .status-badge { padding: .3em .6em; border-radius: .25rem; font-size: 0.85em; font-weight: bold; }
         .status-badge.active { background-color: #28a745; color: white; }
         .status-badge.inactive { background-color: #dc3545; color: white; }
+        .footer { 
+            background-color: #f8f9fa;
+            border-top: 1px solid #e9ecef;
+            text-align: center;
+            padding: 20px;
+            color: #6c757d;
+            font-size: 0.9rem;
+            width: 100%;
+        }
     </style>
 </head>
 <body>
