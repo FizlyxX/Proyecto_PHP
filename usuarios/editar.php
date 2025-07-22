@@ -1,17 +1,18 @@
 <?php
 session_start();
 
-if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true || $_SESSION["username"] !== 'admin') {
+require_once '../config.php';
+require_once 'funciones.php';
+
+// Verificar si el usuario es administrador
+if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true || !esAdministrador()) {
     header("location: ../index.php");
     exit;
 }
 
-require_once '../config.php';
-require_once 'funciones.php';
-
 $id = $nombre_usuario = $contrasena = $confirm_contrasena = "";
 $nombre_usuario_err = $contrasena_err = $confirm_contrasena_err = $rol_err = "";
-$id_rol = '';
+$id_rol = ''; // Variable para el rol seleccionado
 
 // Obtener los roles para el select
 $roles = getRoles($link);
@@ -25,7 +26,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (empty(trim($_POST["nombre_usuario"]))) {
         $nombre_usuario_err = "Por favor ingrese un nombre de usuario.";
     } else {
-        // Verificar si el nombre de usuario ya existe para otro usuario
+        // Verificar si el nombre de usuario ya existe para otro usuario (excluyendo el actual)
         $sql = "SELECT id FROM usuarios WHERE nombre_usuario = ? AND id != ?";
         if ($stmt = mysqli_prepare($link, $sql)) {
             mysqli_stmt_bind_param($stmt, "si", $param_nombre_usuario, $param_id);
@@ -39,7 +40,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     $nombre_usuario = trim($_POST["nombre_usuario"]);
                 }
             } else {
-                echo "¡Ups! Algo salió mal. Por favor, inténtelo de nuevo más tarde.";
+                echo "¡Ups! Algo salió mal al verificar el usuario.";
             }
             mysqli_stmt_close($stmt);
         }
@@ -49,7 +50,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $contrasena_nueva = trim($_POST["contrasena"]);
     $confirm_contrasena = trim($_POST["confirm_contrasena"]);
 
-    if (!empty($contrasena_nueva)) {
+    if (!empty($contrasena_nueva)) { // Si se ingresó una nueva contraseña
         if (strlen($contrasena_nueva) < 6) {
             $contrasena_err = "La contraseña debe tener al menos 6 caracteres.";
         } else {
@@ -76,7 +77,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             header("location: index.php?msg=actualizado");
             exit();
         } else {
-            echo '<div class="alert alert-danger">Error al actualizar el usuario. Por favor, inténtelo de nuevo.</div>';
+            echo '<div class="alert alert-danger">Error al actualizar el usuario. Puede que el nombre de usuario ya exista.</div>';
         }
     }
     mysqli_close($link);
@@ -89,6 +90,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if ($usuario_data) {
             $nombre_usuario = $usuario_data['nombre_usuario'];
             $id_rol = $usuario_data['id_rol'];
+            // No cargamos la contraseña por seguridad
         } else {
             // Usuario no encontrado, redirigir
             header("location: index.php");
@@ -112,21 +114,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link rel="stylesheet" href="../css/style.css">
     <style>
-        body {
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
-        .content-wrapper {
-            flex: 1;
-            padding-bottom: 50px;
-        }
-        .form-group {
-            margin-bottom: 1rem;
-        }
-        .invalid-feedback {
-            display: block;
-        }
+        body { display: flex; flex-direction: column; min-height: 100vh; }
+        .content-wrapper { flex: 1; padding-bottom: 50px; }
+        .form-group { margin-bottom: 1rem; }
+        .invalid-feedback { display: block; }
     </style>
 </head>
 <body>
@@ -138,13 +129,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    <li class="nav-item">
-                        <a class="nav-link" href="../home.php">Home</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link active" aria-current="page" href="index.php">Módulo de Usuarios</a>
-                    </li>
-                    </ul>
+                    <li class="nav-item"><a class="nav-link" href="../home.php">Home</a></li>
+                    <li class="nav-item"><a class="nav-link active" aria-current="page" href="index.php">Módulo de Usuarios</a></li>
+                </ul>
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -202,8 +189,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     </div>
 
     <?php
-    if (class_exists('Footer')) {
-        $footer = new Footer();
+    if (class_exists('FooterView')) {
+        $footer = new FooterView();
         $footer->render();
     } else {
         echo '<footer class="footer">';
