@@ -67,8 +67,7 @@ body {
 /* Panel Izquierdo del Login (Imagen grande de fondo) */
 .left-panel {
     flex: 0 0 45%; /* Ocupa el 45% del ancho total */
-    background-image: url('../images/login_imagen.jpg'); /* Ruta de tu imagen de login */
-    background-size: cover;
+    background-image: url('../images/login_image1.jpg');
     background-position: center;
     position: relative;
     display: flex;
@@ -155,19 +154,23 @@ body {
 
 /* Estilos del botón de Login */
 .btn-primary {
-    background-color: #007bff;
-    border-color: #007bff;
-    padding: 12px 25px;
-    border-radius: 4px;
-    font-size: 1rem;
-    font-weight: 500;
+    height: 48px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 16px;
+    background-color: #0069d9;
+    border: none;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    box-shadow: 0 4px 15px rgba(0, 105, 217, 0.3);
 }
 
 /* Efecto hover para el botón de login */
 .btn-primary:hover {
     background-color: #0056b3;
-    border-color: #0056b3;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 86, 179, 0.4);
 }
+
 
 /* Estilos del mensaje de error en el login */
 .error-message {
