@@ -58,6 +58,9 @@ if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
                         <a class="nav-link" href="usuarios/index.php">Módulo de Usuarios</a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link" href="roles/index.php">Módulo de Roles</a> 
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link" href="#">Módulo de Colaboradores</a>
                     </li>
                     <li class="nav-item">
