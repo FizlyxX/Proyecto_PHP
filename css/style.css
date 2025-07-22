@@ -29,29 +29,6 @@ body {
     box-shadow: 2px 0 10px rgba(0,0,0,0.1); 
 }
 
-/* Contenedor para los puntos del slider (en el panel izquierdo) */
-.slider-dots {
-    position: absolute; 
-    bottom: 20px; 
-    left: 50%; 
-    transform: translateX(-50%); 
-    display: flex; 
-    gap: 8px; 
-}
-
-.dot {
-    width: 10px;
-    height: 10px;
-    background-color: rgba(255,255,255,0.5); 
-    border-radius: 50%; 
-    border: 1px solid rgba(255,255,255,0.8); 
-    cursor: pointer; /* Indica que son interactivos (aunque no haya funcionalidad JS) */
-}
-
-.dot.active {
-    background-color: #fff; 
-}
-
 /* Panel Derecho (Contiene el formulario de login) */
 .right-panel {
     flex: 1; 
