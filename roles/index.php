@@ -2,14 +2,20 @@
 session_start();
 
 require_once '../config.php';
-require_once 'funciones.php'; 
-require_once '../classes/Footer.php'; 
+require_once 'funciones.php';
+require_once '../classes/Footer.php';
 
 // Verificar si el usuario ha iniciado sesión y es administrador
 if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true || !esAdministrador()) {
     header("location: ../index.php"); // Redirigir al login si no tiene permisos
     exit;
 }
+
+// Definir la página actual para que el navbar la resalte
+$current_page = 'roles';
+
+// Incluir la barra de navegación reusable
+require_once '../includes/navbar.php'; 
 
 $roles = getTodosLosRoles($link); // Obtener todos los roles
 
@@ -47,40 +53,6 @@ mysqli_close($link);
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="../home.php">Capital Humano</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    <li class="nav-item">
-                        <a class="nav-link" href="../home.php">Home</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="../usuarios/index.php">Módulo de Usuarios</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link active" aria-current="page" href="index.php">Módulo de Roles</a>
-                    </li>
-                    </ul>
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <?php echo htmlspecialchars($_SESSION["username"]); ?>
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                            <li><a class="dropdown-item" href="#">Mi Perfil</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="../logout.php">Cerrar Sesión</a></li>
-                        </ul>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </nav>
-
     <div class="container mt-4 content-wrapper">
         <h2>Gestión de Roles</h2>
         <p>Administra los roles del sistema y sus descripciones.</p>
@@ -121,8 +93,8 @@ mysqli_close($link);
     </div>
 
     <?php
-    if (class_exists('FooterView')) {
-        $footer = new FooterView();
+    if (class_exists('Footer')) {
+        $footer = new Footer();
         $footer->render();
     } else {
         echo '<footer class="footer">';

@@ -11,19 +11,23 @@ if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true || !esAdmini
     exit;
 }
 
+// Definir la página actual para que el navbar la resalte
+$current_page = 'roles';
+
+// Incluir la barra de navegación reusable
+require_once '../includes/navbar.php'; 
+
 $id_rol = $nombre_rol = $descripcion = "";
 $nombre_rol_err = $descripcion_err = "";
 
 // Procesar el formulario cuando se envía
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    // Obtener el ID del rol a editar
     $id_rol = $_POST["id_rol"];
 
     // Validar nombre del rol
     if (empty(trim($_POST["nombre_rol"]))) {
         $nombre_rol_err = "Por favor ingrese un nombre para el rol.";
     } else {
-        // Verificar si el nombre del rol ya existe para otro rol
         $sql = "SELECT id_rol FROM roles WHERE nombre_rol = ? AND id_rol != ?";
         if ($stmt = mysqli_prepare($link, $sql)) {
             mysqli_stmt_bind_param($stmt, "si", $param_nombre_rol, $param_id_rol);
@@ -66,12 +70,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $nombre_rol = $rol_data['nombre_rol'];
             $descripcion = $rol_data['descripcion'];
         } else {
-            // Rol no encontrado, redirigir
             header("location: index.php");
             exit();
         }
     } else {
-        // ID no proporcionado, redirigir
         header("location: index.php");
         exit();
     }
@@ -95,33 +97,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="../home.php">Capital Humano</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    <li class="nav-item"><a class="nav-link" href="../home.php">Home</a></li>
-                    <li class="nav-item"><a class="nav-link active" aria-current="page" href="index.php">Módulo de Roles</a></li>
-                </ul>
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <?php echo htmlspecialchars($_SESSION["username"]); ?>
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                            <li><a class="dropdown-item" href="#">Mi Perfil</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="../logout.php">Cerrar Sesión</a></li>
-                        </ul>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </nav>
-
     <div class="container mt-4 content-wrapper">
         <h2>Editar Rol</h2>
         <p>Modifique los datos del rol.</p>
@@ -146,8 +121,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     </div>
 
     <?php
-    if (class_exists('FooterView')) {
-        $footer = new FooterView();
+    if (class_exists('Footer')) {
+        $footer = new Footer();
         $footer->render();
     } else {
         echo '<footer class="footer">';
