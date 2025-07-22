@@ -3,17 +3,17 @@ session_start();
 
 require_once '../config.php';
 require_once 'funciones.php';
-require_once '../classes/Footer.php';
-require_once '../includes/navbar.php';
+require_once '../classes/Footer.php'; // Requiere la clase Footer, no la renderiza aquí
 
-// Verificar si el usuario ha iniciado sesión y tiene permisos (ej. RRHH o Administrador)
-if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true || !esAdministrador()) { // O !esRRHH() si defines ese rol
-    header("location: ../index.php");
+// La variable $current_page debe ser definida antes de que navbar.php sea incluido
+$current_page = 'colaboradores';
+require_once '../includes/navbar.php'; // Requiere el navbar
+
+// Verificar si el usuario ha iniciado sesión y tiene permisos de Administrador o RRHH
+if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true || (!esAdministrador() && !esRRHH())) {
+    header("location: ../index.php"); // Redirigir al login si no tiene permisos
     exit;
 }
-
-// Definir la página actual para que el navbar la resalte
-$current_page = 'colaboradores';
 
 // Inicializar variables del formulario y errores
 $primer_nombre = $segundo_nombre = $primer_apellido = $segundo_apellido = "";
@@ -89,14 +89,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             exit();
         } else {
             // Manejar errores específicos devueltos por crearColaborador
-            $error_type = isset($resultado_creacion['error']) ? $resultado_creacion['error'] : 'Error desconocido al crear.';
-            // Determinar qué error mostrar en la interfaz
-            if (strpos($error_type, 'identificación') !== false) {
-                 $identificacion_err = $error_type; // Mensaje específico para identificación duplicada
-            } else if (strpos($error_type, 'foto') !== false || strpos($error_type, 'PDF') !== false) {
-                $foto_perfil_err = $error_type; // Mensaje para errores de subida de archivos
+            $error_message_from_func = isset($resultado_creacion['error']) ? $resultado_creacion['error'] : 'Error desconocido al crear.';
+            
+            // Si el error es de identificación duplicada, actualiza el error_err específico
+            if (strpos($error_message_from_func, 'identificación') !== false) {
+                 $identificacion_err = $error_message_from_func;
+                 // No redirigir, mostrar el error en el formulario actual
             } else {
-                echo '<div class="alert alert-danger">Error: ' . htmlspecialchars($error_type) . '</div>';
+                // Para otros errores de subida o DB, redirige con el mensaje para mostrarlo como alerta general
+                header("location: index.php?msg=error_upload&error_upload=" . urlencode($error_message_from_func));
+                exit();
             }
         }
     }
@@ -111,13 +113,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registrar Colaborador - Capital Humano</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/app_style.css">
     <style>
-        body { display: flex; flex-direction: column; min-height: 100vh; }
-        .content-wrapper { flex: 1; padding-bottom: 50px; }
-        .form-group { margin-bottom: 1rem; }
-        .invalid-feedback { display: block; }
-        .footer { 
+         .footer { 
             background-color: #f8f9fa;
             border-top: 1px solid #e9ecef;
             text-align: center;
@@ -127,8 +125,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             width: 100%;
         }
     </style>
-</head>
+    </head>
 <body>
+    <?php require_once '../includes/navbar.php'; ?>
+
     <div class="container mt-4 content-wrapper">
         <h2>Registrar Nuevo Colaborador</h2>
         <p>Complete el formulario para añadir un nuevo colaborador al sistema.</p>
@@ -243,9 +243,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 <a href="index.php" class="btn btn-secondary">Cancelar</a>
             </div>
         </form>
-    </div>
-
-    <?php
+    </div> <?php
     if (class_exists('Footer')) {
         $footer = new Footer();
         $footer->render();

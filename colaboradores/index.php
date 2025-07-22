@@ -6,9 +6,8 @@ require_once 'funciones.php'; // Incluye las funciones del módulo de colaborado
 require_once '../classes/Footer.php'; 
 require_once '../includes/navbar.php'; 
 
-// Verificar si el usuario ha iniciado sesión y tiene permisos (ej. RRHH o Administrador)
-// Usaremos esAdministrador() como ejemplo. Puedes crear una función esRRHH() en usuarios/funciones.php
-if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true || !esAdministrador()) {
+// Verificar si el usuario ha iniciado sesión y tiene permisos de Administrador o RRHH
+if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true || (!esAdministrador() && !esRRHH())) {
     header("location: ../index.php"); // Redirigir al login si no tiene permisos
     exit;
 }
@@ -151,7 +150,7 @@ mysqli_close($link);
                                 </td>
                                 <td>
                                     <a href="ver.php?id=<?php echo $colaborador['id_colaborador']; ?>" class="btn btn-info btn-sm">Ver</a>
-                                    <a href="editar.php?id=<?php echo $colaborador['id_colaborador']; ?>" class="btn btn-primary btn-sm">Editar</a>
+                                    <a href="editar.php?id=<?php echo $colaborador['id_colaborador']; ?>" class="btn btn-info btn-sm">Editar</a>
                                     <?php if ($colaborador['activo'] == 1): ?>
                                         <a href="eliminar.php?id=<?php echo $colaborador['id_colaborador']; ?>" class="btn btn-warning btn-sm" onclick="return confirm('¿Está seguro de DESACTIVAR a este colaborador?');">Desactivar</a>
                                     <?php else: ?>

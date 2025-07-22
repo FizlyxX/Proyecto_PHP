@@ -13,11 +13,19 @@ function tieneRol($rol_requerido) {
 
 /**
  * Verifica si el usuario actual es Administrador.
- * Asume que el ID del rol 'Administrador' es 1. ¡AJUSTA ESTE VALOR SI ES DIFERENTE EN TU BD!
+ * Asume que el ID del rol 'Administrador' es 1. 
  * @return bool True si el usuario es administrador, false en caso contrario.
  */
 function esAdministrador() {
     return tieneRol(1); // ID del rol de Administrador
+}
+/**
+ * Verifica si el usuario actual tiene el rol de RRHH.
+ * Asume que el ID del rol de RRHH es 2. 
+ * @return bool True si el usuario es RRHH, false en caso contrario.
+ */
+function esRRHH() {
+    return tieneRol(2); // Asumiendo que 2 es el id_rol para 'RRHH'
 }
 
 // --- Funciones CRUD para Usuarios ---

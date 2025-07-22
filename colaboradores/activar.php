@@ -5,9 +5,9 @@ require_once '../config.php';
 require_once 'funciones.php';
 require_once '../includes/navbar.php'; // Incluir para usar esAdministrador()
 
-// Verificar si el usuario ha iniciado sesión y tiene permisos (ej. RRHH o Administrador)
-if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true || !esAdministrador()) { // O !esRRHH()
-    header("location: ../index.php");
+// Verificar si el usuario ha iniciado sesión y tiene permisos de Administrador o RRHH
+if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true || (!esAdministrador() && !esRRHH())) {
+    header("location: ../index.php"); // Redirigir al login si no tiene permisos
     exit;
 }
 

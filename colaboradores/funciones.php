@@ -1,26 +1,38 @@
 <?php
+// Incluye el archivo de configuración de la base de datos (subir dos niveles desde /colaboradores/)
 require_once __DIR__ . '/../config.php';
-require_once __DIR__ . '/../usuarios/funciones.php'; // Para usar esAdministrador()
+// Incluye funciones del módulo de usuarios para la verificación de roles
+require_once __DIR__ . '/../usuarios/funciones.php'; 
 
 // --- Constantes para rutas de subida ---
+// Rutas absolutas en el servidor donde se guardarán los archivos
 define('UPLOAD_DIR_FOTOS', __DIR__ . '/../uploads/fotos_perfil/');
 define('UPLOAD_DIR_PDFS', __DIR__ . '/../uploads/historiales_academicos/');
-define('URL_BASE_FOTOS', '../uploads/fotos_perfil/'); // Ruta URL relativa para mostrar
-define('URL_BASE_PDFS', '../uploads/historiales_academicos/'); // Ruta URL relativa para mostrar
+
+// Rutas relativas para ser usadas en el HTML (para mostrar las imágenes/PDFs en el navegador)
+define('URL_BASE_FOTOS', '../uploads/fotos_perfil/'); 
+define('URL_BASE_PDFS', '../uploads/historiales_academicos/'); 
 
 // --- Constantes para redimensionamiento de imágenes ---
-define('THUMBNAIL_WIDTH', 100);  // Ancho de la miniatura
-define('THUMBNAIL_HEIGHT', 100); // Alto de la miniatura
-define('ORIGINAL_PHOTO_WIDTH', 500); // Ancho deseado para la foto original (si es muy grande)
-define('ORIGINAL_PHOTO_HEIGHT', 500); // Alto deseado para la foto original (si es muy grande)
+define('THUMBNAIL_WIDTH', 100);  // Ancho deseado para la miniatura
+define('THUMBNAIL_HEIGHT', 100); // Alto deseado para la miniatura
+define('ORIGINAL_PHOTO_WIDTH', 500); // Ancho deseado para la foto "original" (tamaño uniforme)
+define('ORIGINAL_PHOTO_HEIGHT', 500); // Alto deseado para la foto "original" (tamaño uniforme)
 
-// Función para obtener todos los colaboradores
-// AÑADIDO: $mostrar_inactivos para controlar si se muestran todos o solo activos
+// --- Funciones para Colaboradores ---
+
+/**
+ * Obtiene una lista de colaboradores de la base de datos.
+ *
+ * @param mysqli $link La conexión a la base de datos.
+ * @param bool $mostrar_inactivos Si es true, incluye colaboradores inactivos. Por defecto, solo activos.
+ * @return array Un array de arrays asociativos con los datos de los colaboradores.
+ */
 function getColaboradores($link, $mostrar_inactivos = false) {
     $colaboradores = [];
     $sql = "SELECT * FROM colaboradores";
     if (!$mostrar_inactivos) {
-        $sql .= " WHERE activo = 1"; // Solo activos por defecto
+        $sql .= " WHERE activo = 1"; // Solo trae colaboradores activos por defecto
     }
     $sql .= " ORDER BY primer_apellido ASC, primer_nombre ASC";
 
@@ -33,7 +45,13 @@ function getColaboradores($link, $mostrar_inactivos = false) {
     return $colaboradores;
 }
 
-// Función para obtener un colaborador por su ID
+/**
+ * Obtiene los detalles de un colaborador por su ID.
+ *
+ * @param mysqli $link La conexión a la base de datos.
+ * @param int $id El ID del colaborador.
+ * @return array|null Un array asociativo con los datos del colaborador, o null si no se encuentra.
+ */
 function getColaboradorById($link, $id) {
     $colaborador = null;
     $sql = "SELECT * FROM colaboradores WHERE id_colaborador = ?";
@@ -50,11 +68,17 @@ function getColaboradorById($link, $id) {
     return $colaborador;
 }
 
-// Función para subir y redimensionar una imagen de perfil
-function subirYRedimensionarFotoPerfil($file_input_name, $existing_photo_url = null) {
+/**
+ * Sube y redimensiona una imagen de perfil, eliminando versiones antiguas si aplica.
+ *
+ * @param string $file_input_name El nombre del campo <input type="file"> en el formulario.
+ * @param string|null $existing_photo_url_from_db La URL de la foto existente en la BD (si es una edición).
+ * @return array Un array con 'success' (ruta URL) o 'error' (mensaje).
+ */
+function subirYRedimensionarFotoPerfil($file_input_name, $existing_photo_url_from_db = null) {
     // Si no se sube un nuevo archivo, mantener el existente
     if (!isset($_FILES[$file_input_name]) || $_FILES[$file_input_name]['error'] == UPLOAD_ERR_NO_FILE) {
-        return ['success' => $existing_photo_url];
+        return ['success' => $existing_photo_url_from_db];
     }
 
     $file = $_FILES[$file_input_name];
@@ -65,81 +89,87 @@ function subirYRedimensionarFotoPerfil($file_input_name, $existing_photo_url = n
         return ['error' => 'Tipo de archivo no permitido para la foto (solo JPG, JPEG, PNG, GIF).'];
     }
 
-    // Generar un nombre de archivo único
-    $file_name_unique = uniqid('foto_') . '.' . $file_extension;
-    $temp_original_path = UPLOAD_DIR_FOTOS . $file_name_unique; // Path temporal para el archivo subido sin redimensionar
+    // Generar un nombre BASE único para el archivo (SIN PREFIJOS AÚN)
+    $unique_base_name = uniqid('foto_') . '.' . $file_extension; // Ej: foto_66a7b8c9d0e1f.jpg
+    $temp_original_path_server = UPLOAD_DIR_FOTOS . $unique_base_name; // Path temporal en el servidor
 
     // Mover el archivo subido al directorio temporal
-    if (!move_uploaded_file($file['tmp_name'], $temp_original_path)) {
+    if (!move_uploaded_file($file['tmp_name'], $temp_original_path_server)) {
         return ['error' => 'Error al mover el archivo subido. Verifique permisos de escritura.'];
     }
 
-    // --- Redimensionar y Guardar la foto original (ajustada a un tamaño máximo) y miniatura ---
-    list($width, $height, $type) = @getimagesize($temp_original_path); // Usar @ para suprimir warnings si no es imagen válida
+    // --- Procesar y Redimensionar ---
+    // Usar @ para suprimir warnings si getimagesize falla (ej. archivo no es una imagen válida)
+    list($width, $height, $type) = @getimagesize($temp_original_path_server); 
     if (!$type || !in_array($type, [IMAGETYPE_JPEG, IMAGETYPE_PNG, IMAGETYPE_GIF])) {
         // Eliminar el archivo temporal si no es una imagen válida
-        if (file_exists($temp_original_path)) {
-            unlink($temp_original_path);
+        if (file_exists($temp_original_path_server)) {
+            @unlink($temp_original_path_server);
         }
         return ['error' => 'El archivo subido no es una imagen válida o soportada.'];
     }
 
     $source_image = null;
     switch ($type) {
-        case IMAGETYPE_JPEG:
-            $source_image = imagecreatefromjpeg($temp_original_path);
-            break;
-        case IMAGETYPE_PNG:
-            $source_image = imagecreatefrompng($temp_original_path);
-            break;
-        case IMAGETYPE_GIF:
-            $source_image = imagecreatefromgif($temp_original_path);
-            break;
+        case IMAGETYPE_JPEG: $source_image = imagecreatefromjpeg($temp_original_path_server); break;
+        case IMAGETYPE_PNG:  $source_image = imagecreatefrompng($temp_original_path_server); break;
+        case IMAGETYPE_GIF:  $source_image = imagecreatefromgif($temp_original_path_server); break;
     }
 
     if (!$source_image) {
-        // Eliminar el archivo temporal si no se pudo crear la imagen
-        if (file_exists($temp_original_path)) {
-            unlink($temp_original_path);
+        // Eliminar el archivo temporal si no se pudo crear la imagen GD
+        if (file_exists($temp_original_path_server)) {
+            @unlink($temp_original_path_server);
         }
-        return ['error' => 'Error al procesar la imagen subida.'];
+        return ['error' => 'Error al procesar la imagen subida (GD resource).'];
     }
 
-    // Redimensionar para la foto "original" (tamaño uniforme)
-    $final_original_url_path = URL_BASE_FOTOS . 'original_' . $file_name_unique;
-    $final_original_file_path = UPLOAD_DIR_FOTOS . 'original_' . $file_name_unique;
+    // Rutas ABSOLUTAS de los ARCHIVOS FINALES en el servidor (con los prefijos)
+    $final_original_file_path = UPLOAD_DIR_FOTOS . 'original_' . $unique_base_name;
+    // CORRECCIÓN CLAVE AQUÍ: La miniatura DEBE tener el prefijo 'thumb_original_' para coincidir con la BD
+    $final_thumbnail_file_path = UPLOAD_DIR_FOTOS . 'thumb_original_' . $unique_base_name; 
+
+    // Redimensionar y guardar el archivo original redimensionado
     redimensionarImagen($source_image, $final_original_file_path, ORIGINAL_PHOTO_WIDTH, ORIGINAL_PHOTO_HEIGHT, $file_extension, $type);
 
-    // Redimensionar para la miniatura
-    $final_thumbnail_file_path = UPLOAD_DIR_FOTOS . 'thumb_' . $file_name_unique;
+    // Redimensionar y guardar la miniatura
     redimensionarImagen($source_image, $final_thumbnail_file_path, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT, $file_extension, $type);
 
-    imagedestroy($source_image); // Liberar memoria de la imagen fuente
-    
-    // Eliminar el archivo original temporal que se subió
-    if (file_exists($temp_original_path)) {
-        unlink($temp_original_path);
-    }
+    imagedestroy($source_image); // Liberar memoria de la imagen fuente GD
+    @unlink($temp_original_path_server); // Eliminar el archivo temporal sin redimensionar (siempre se elimina)
 
-    // Si ya existía una foto, borrar las versiones antiguas (original y miniatura)
-    if ($existing_photo_url) {
-        $old_base_name = basename($existing_photo_url);
-        // Construir rutas de archivo para las versiones originales y miniatura antiguas
-        $old_original_path = UPLOAD_DIR_FOTOS . 'original_' . $old_base_name;
-        $old_thumbnail_path = UPLOAD_DIR_FOTOS . 'thumb_' . $old_base_name;
+    // --- Eliminar archivos antiguos (si existían y se subió uno nuevo con éxito) ---
+    if ($existing_photo_url_from_db && !empty($existing_photo_url_from_db)) {
+        // Obtiene solo el nombre del archivo de la URL de la BD (ej. 'original_foto_OLD.jpg')
+        $old_base_name_from_db_url = basename($existing_photo_url_from_db); 
+        
+        // Rutas ABSOLUTAS completas de los archivos antiguos en el servidor
+        $old_original_path_server = UPLOAD_DIR_FOTOS . $old_base_name_from_db_url;
+        // CORRECCIÓN CLAVE AQUÍ: Al eliminar la miniatura antigua, su nombre también sigue el patrón 'thumb_original_'
+        $old_thumbnail_path_server = UPLOAD_DIR_FOTOS . 'thumb_original_' . $old_base_name_from_db_url; 
 
-        if (file_exists($old_original_path)) {
-            unlink($old_original_path);
+        if (file_exists($old_original_path_server)) {
+            @unlink($old_original_path_server);
         }
-        if (file_exists($old_thumbnail_path)) {
-            unlink($old_thumbnail_path);
+        if (file_exists($old_thumbnail_path_server)) {
+            @unlink($old_thumbnail_path_server);
         }
     }
     
-    return ['success' => $final_original_url_path]; // Devolver la URL de la foto redimensionada "original" para guardar en BD
+    // Devolver la URL RELATIVA para guardar en la BD (solo con 'original_')
+    return ['success' => URL_BASE_FOTOS . 'original_' . $unique_base_name];
 }
 
-// Función auxiliar para redimensionar imágenes (pequeña corrección de tipo)
+/**
+ * Función auxiliar para redimensionar imágenes.
+ *
+ * @param resource $source_gd_image El recurso de imagen GD de origen.
+ * @param string $target_path La ruta absoluta donde guardar la imagen redimensionada.
+ * @param int $target_width El ancho deseado.
+ * @param int $target_height El alto deseado.
+ * @param string $extension La extensión del archivo ('jpg', 'png', 'gif').
+ * @param int $type El tipo de imagen (IMAGETYPE_JPEG, etc.).
+ */
 function redimensionarImagen($source_gd_image, $target_path, $target_width, $target_height, $extension, $type) {
     $width = imagesx($source_gd_image);
     $height = imagesy($source_gd_image);
@@ -152,7 +182,7 @@ function redimensionarImagen($source_gd_image, $target_path, $target_width, $tar
         $target_height = $target_width / $ratio_orig;
     }
 
-    $resized_image = imagecreatetruecolor(round($target_width), round($target_height)); // Usar round() para evitar float a int warnings
+    $resized_image = imagecreatetruecolor(round($target_width), round($target_height));
 
     // Conservar transparencia para PNG y GIF
     if ($type == IMAGETYPE_PNG || $type == IMAGETYPE_GIF) {
@@ -179,7 +209,13 @@ function redimensionarImagen($source_gd_image, $target_path, $target_width, $tar
     imagedestroy($resized_image); // Liberar memoria
 }
 
-// Función para subir PDF
+/**
+ * Sube un archivo PDF al servidor, eliminando la versión antigua si aplica.
+ *
+ * @param string $file_input_name El nombre del campo <input type="file"> en el formulario.
+ * @param string|null $existing_pdf_url La URL del PDF existente en la BD (si es una edición).
+ * @return array Un array con 'success' (ruta URL) o 'error' (mensaje).
+ */
 function subirPDF($file_input_name, $existing_pdf_url = null) {
     // Si no se sube un nuevo archivo, mantener el existente
     if (!isset($_FILES[$file_input_name]) || $_FILES[$file_input_name]['error'] == UPLOAD_ERR_NO_FILE) {
@@ -194,23 +230,32 @@ function subirPDF($file_input_name, $existing_pdf_url = null) {
     }
 
     $file_name = uniqid('pdf_') . '.' . $file_extension;
-    $target_path = UPLOAD_DIR_PDFS . $file_name;
+    $target_path = UPLOAD_DIR_PDFS . $file_name; // Ruta absoluta en el servidor
 
     if (!move_uploaded_file($file['tmp_name'], $target_path)) {
         return ['error' => 'Error al subir el archivo PDF. Verifique permisos de escritura.'];
     }
 
     // Si ya existía un PDF, borrar el archivo antiguo
-    if ($existing_pdf_url) {
+    if ($existing_pdf_url && !empty($existing_pdf_url)) {
         $old_pdf_file_name = basename($existing_pdf_url);
         if (file_exists(UPLOAD_DIR_PDFS . $old_pdf_file_name)) {
-            unlink(UPLOAD_DIR_PDFS . $old_pdf_file_name);
+            @unlink(UPLOAD_DIR_PDFS . $old_pdf_file_name);
         }
     }
+    // Retorna la URL relativa para guardar en la BD
     return ['success' => URL_BASE_PDFS . $file_name];
 }
 
-// Función para crear un nuevo colaborador
+/**
+ * Crea un nuevo colaborador en la base de datos y gestiona la subida de archivos.
+ *
+ * @param mysqli $link La conexión a la base de datos.
+ * @param array $data Array asociativo con los datos del colaborador.
+ * @param string $foto_file_input_name El nombre del campo de archivo de la foto.
+ * @param string $pdf_file_input_name El nombre del campo de archivo del PDF.
+ * @return array Un array con 'success' (true) o 'error' (mensaje).
+ */
 function crearColaborador($link, $data, $foto_file_input_name, $pdf_file_input_name) {
     // Manejo de la subida de foto
     $foto_result = subirYRedimensionarFotoPerfil($foto_file_input_name);
@@ -222,24 +267,24 @@ function crearColaborador($link, $data, $foto_file_input_name, $pdf_file_input_n
     // Manejo de la subida de PDF
     $pdf_result = subirPDF($pdf_file_input_name);
     if (isset($pdf_result['error'])) {
-        // Opcional: borrar la foto si el PDF falla y la foto se subió
-        if (!empty($ruta_foto_perfil) && strpos($ruta_foto_perfil, 'original_') !== false) { // Solo borrar si es una nueva subida
+        // Opcional: borrar la foto si el PDF falla y la foto se subió (solo si es una nueva subida)
+        if (!empty($ruta_foto_perfil) && strpos($ruta_foto_perfil, 'original_') !== false) { 
             $uploaded_photo_name = basename($ruta_foto_perfil);
-            if (file_exists(UPLOAD_DIR_FOTOS . $uploaded_photo_name)) {
-                unlink(UPLOAD_DIR_FOTOS . $uploaded_photo_name);
+            if (file_exists(UPLOAD_DIR_FOTOS . 'original_' . $uploaded_photo_name)) {
+                @unlink(UPLOAD_DIR_FOTOS . 'original_' . $uploaded_photo_name);
             }
-            if (file_exists(UPLOAD_DIR_FOTOS . 'thumb_' . $uploaded_photo_name)) {
-                unlink(UPLOAD_DIR_FOTOS . 'thumb_' . $uploaded_photo_name);
+            if (file_exists(UPLOAD_DIR_FOTOS . 'thumb_original_' . $uploaded_photo_name)) { 
+                @unlink(UPLOAD_DIR_FOTOS . 'thumb_original_' . $uploaded_photo_name);
             }
         }
         return ['error' => $pdf_result['error']];
     }
     $ruta_historial_academico_pdf = $pdf_result['success'];
 
-    $sql = "INSERT INTO colaboradores (primer_nombre, segundo_nombre, primer_apellido, segundo_apellido, sexo, identificacion, fecha_nacimiento, correo_personal, telefono, celular, direccion, ruta_foto_perfil, ruta_historial_academico_pdf, activo) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)"; // AÑADIDO: 'activo' por defecto a 1
+    $sql = "INSERT INTO colaboradores (primer_nombre, segundo_nombre, primer_apellido, segundo_apellido, sexo, identificacion, fecha_nacimiento, correo_personal, telefono, celular, direccion, ruta_foto_perfil, ruta_historial_academico_pdf, activo) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)";
     
     if ($stmt = mysqli_prepare($link, $sql)) {
-        mysqli_stmt_bind_param($stmt, "ssssssssssssss", // sssssssssssssi -> ssssssssssssss (activo es BOOLEAN/TINYINT, pero lo pasamos como string '1')
+        mysqli_stmt_bind_param($stmt, "sssssssssssss", // Son 13 's' para 13 variables
             $data['primer_nombre'], $data['segundo_nombre'], $data['primer_apellido'],
             $data['segundo_apellido'], $data['sexo'], $data['identificacion'],
             $data['fecha_nacimiento'], $data['correo_personal'], $data['telefono'],
@@ -248,54 +293,63 @@ function crearColaborador($link, $data, $foto_file_input_name, $pdf_file_input_n
         );
 
         if (mysqli_stmt_execute($stmt)) {
-            mysqli_stmt_close($stmt); // Cerrar aquí para evitar código inalcanzable
+            mysqli_stmt_close($stmt);
             return ['success' => true];
         } else {
-            // Si la inserción en la BD falla, intenta borrar los archivos subidos
+            // Si la inserción en la BD falla, intenta borrar los archivos subidos (si es una nueva subida)
             if (!empty($ruta_foto_perfil) && strpos($ruta_foto_perfil, 'original_') !== false) {
                 $uploaded_photo_name = basename($ruta_foto_perfil);
-                if (file_exists(UPLOAD_DIR_FOTOS . $uploaded_photo_name)) {
-                    unlink(UPLOAD_DIR_FOTOS . $uploaded_photo_name);
+                if (file_exists(UPLOAD_DIR_FOTOS . 'original_' . $uploaded_photo_name)) {
+                    @unlink(UPLOAD_DIR_FOTOS . 'original_' . $uploaded_photo_name);
                 }
-                if (file_exists(UPLOAD_DIR_FOTOS . 'thumb_' . $uploaded_photo_name)) {
-                    unlink(UPLOAD_DIR_FOTOS . 'thumb_' . $uploaded_photo_name);
+                if (file_exists(UPLOAD_DIR_FOTOS . 'thumb_original_' . $uploaded_photo_name)) { 
+                    @unlink(UPLOAD_DIR_FOTOS . 'thumb_original_' . $uploaded_photo_name);
                 }
             }
             if (!empty($ruta_historial_academico_pdf) && strpos($ruta_historial_academico_pdf, 'pdf_') !== false) {
                 if (file_exists(UPLOAD_DIR_PDFS . basename($ruta_historial_academico_pdf))) {
-                    unlink(UPLOAD_DIR_PDFS . basename($ruta_historial_academico_pdf));
+                    @unlink(UPLOAD_DIR_PDFS . basename($ruta_historial_academico_pdf));
                 }
             }
-            // Manejo de error de duplicidad de identificación
-            if (mysqli_errno($link) == 1062) {
-                mysqli_stmt_close($stmt); // Cerrar stmt antes de retornar error
+            if (mysqli_errno($link) == 1062) { // Error de UNIQUE constraint violation
+                mysqli_stmt_close($stmt);
                 return ['error' => 'La identificación (cédula) ya existe para otro colaborador.'];
             }
-            mysqli_stmt_close($stmt); // Cerrar stmt antes de retornar error
-            return ['error' => 'Error al guardar el colaborador en la base de datos.'];
+            mysqli_stmt_close($stmt);
+            return ['error' => 'Error al guardar el colaborador en la base de datos: ' . mysqli_error($link)]; // Añadir error de MySQL para depuración
         }
     }
-    return ['error' => 'Error en la preparación de la consulta SQL.'];
+    return ['error' => 'Error en la preparación de la consulta SQL para crear.'];
 }
 
-// Función para actualizar un colaborador existente
+/**
+ * Actualiza un colaborador existente en la base de datos y gestiona la subida de archivos.
+ *
+ * @param mysqli $link La conexión a la base de datos.
+ * @param int $id_colaborador El ID del colaborador a actualizar.
+ * @param array $data Array asociativo con los datos del colaborador.
+ * @param string $foto_file_input_name El nombre del campo de archivo de la foto.
+ * @param string $pdf_file_input_name El nombre del campo de archivo del PDF.
+ * @return array Un array con 'success' (true) o 'error' (mensaje).
+ */
 function actualizarColaborador($link, $id_colaborador, $data, $foto_file_input_name, $pdf_file_input_name) {
-    // Obtener las rutas actuales de foto y PDF del colaborador para pasarlas a las funciones de subida
+    // Obtener las rutas actuales de foto y PDF del colaborador desde la BD para pasarlas a las funciones de subida
     $colaborador_existente = getColaboradorById($link, $id_colaborador);
     if (!$colaborador_existente) {
         return ['error' => 'Colaborador no encontrado para actualizar.'];
     }
-    $old_foto_url = $colaborador_existente['ruta_foto_perfil'];
-    $old_pdf_url = $colaborador_existente['ruta_historial_academico_pdf'];
+    $old_foto_url = $colaborador_existente['ruta_foto_perfil'] ?? null; 
+    $old_pdf_url = $colaborador_existente['ruta_historial_academico_pdf'] ?? null;
 
-    // Manejo de la subida de foto (se pasa la ruta antigua para posible eliminación si se sube una nueva)
+
+    // Manejo de la subida de foto (subirYRedimensionarFotoPerfil gestiona el borrado de la antigua si se sube una nueva)
     $foto_result = subirYRedimensionarFotoPerfil($foto_file_input_name, $old_foto_url);
     if (isset($foto_result['error'])) {
         return ['error' => $foto_result['error']];
     }
     $ruta_foto_perfil = $foto_result['success'];
 
-    // Manejo de la subida de PDF (se pasa la ruta antigua para posible eliminación si se sube uno nuevo)
+    // Manejo de la subida de PDF (subirPDF gestiona el borrado de la antigua si se sube uno nuevo)
     $pdf_result = subirPDF($pdf_file_input_name, $old_pdf_url);
     if (isset($pdf_result['error'])) {
         return ['error' => $pdf_result['error']];
@@ -319,77 +373,94 @@ function actualizarColaborador($link, $id_colaborador, $data, $foto_file_input_n
         );
 
         if (mysqli_stmt_execute($stmt)) {
-            mysqli_stmt_close($stmt); // Cerrar aquí para evitar código inalcanzable
+            mysqli_stmt_close($stmt);
             return ['success' => true];
         } else {
-            // Manejo de error de duplicidad de identificación
-            if (mysqli_errno($link) == 1062) {
-                mysqli_stmt_close($stmt); // Cerrar stmt antes de retornar error
+            if (mysqli_errno($link) == 1062) { // Error de UNIQUE constraint violation
+                mysqli_stmt_close($stmt);
                 return ['error' => 'La identificación (cédula) ya existe para otro colaborador.'];
             }
-            mysqli_stmt_close($stmt); // Cerrar stmt antes de retornar error
-            return ['error' => 'Error al actualizar el colaborador en la base de datos.'];
+            mysqli_stmt_close($stmt);
+            return ['error' => 'Error al actualizar el colaborador en la base de datos: ' . mysqli_error($link)]; // Añadir error de MySQL para depuración
         }
     }
     return ['error' => 'Error en la preparación de la consulta SQL para actualización.'];
 }
 
-// Función para desactivar un colaborador (en lugar de eliminarlo físicamente)
-// AÑADIDO: Nuevo criterio para "desactivar" en lugar de "eliminar"
+/**
+ * Desactiva un colaborador en la base de datos (cambia su estado 'activo' a 0).
+ *
+ * @param mysqli $link La conexión a la base de datos.
+ * @param int $id_colaborador El ID del colaborador a desactivar.
+ * @return bool True si la operación fue exitosa, false en caso contrario.
+ */
 function desactivarColaborador($link, $id_colaborador) {
     $sql = "UPDATE colaboradores SET activo = 0 WHERE id_colaborador = ?";
     if ($stmt = mysqli_prepare($link, $sql)) {
         mysqli_stmt_bind_param($stmt, "i", $id_colaborador);
         if (mysqli_stmt_execute($stmt)) {
-            mysqli_stmt_close($stmt); // Cerrar stmt antes de retornar
+            mysqli_stmt_close($stmt);
             return true;
         }
-        mysqli_stmt_close($stmt); // Cerrar stmt antes de retornar
+        mysqli_stmt_close($stmt);
     }
     return false;
 }
 
-// Función para activar un colaborador (complemento de desactivar)
-// AÑADIDO: Nueva función para activar
+/**
+ * Activa un colaborador en la base de datos (cambia su estado 'activo' a 1).
+ *
+ * @param mysqli $link La conexión a la base de datos.
+ * @param int $id_colaborador El ID del colaborador a activar.
+ * @return bool True si la operación fue exitosa, false en caso contrario.
+ */
 function activarColaborador($link, $id_colaborador) {
     $sql = "UPDATE colaboradores SET activo = 1 WHERE id_colaborador = ?";
     if ($stmt = mysqli_prepare($link, $sql)) {
         mysqli_stmt_bind_param($stmt, "i", $id_colaborador);
         if (mysqli_stmt_execute($stmt)) {
-            mysqli_stmt_close($stmt); // Cerrar stmt antes de retornar
+            mysqli_stmt_close($stmt);
             return true;
         }
-        mysqli_stmt_close($stmt); // Cerrar stmt antes de retornar
+        mysqli_stmt_close($stmt);
     }
     return false;
 }
 
-// Función para eliminar archivos físicos (usar con precaución, solo si no se va a activar/desactivar)
-// Si estamos desactivando, no deberíamos llamar a esta función en la práctica.
-// Pero la mantengo si en algún escenario excepcional se necesitara la eliminación física de un archivo.
+/**
+ * Elimina físicamente los archivos de foto y PDF de un colaborador del servidor.
+ * NOTA: Esta función DEBE usarse con EXTREMA PRECAUCIÓN y solo si el registro del colaborador
+ * va a ser completamente eliminado de la BD, lo cual no es la práctica recomendada para
+ * la desactivación.
+ *
+ * @param array $colaborador_data Array asociativo con los datos del colaborador,
+ * especialmente 'ruta_foto_perfil' y 'ruta_historial_academico_pdf'.
+ * @return bool True si los archivos fueron procesados (borrados o no existían), false en caso de error.
+ */
 function eliminarArchivosColaborador($colaborador_data) {
     if (is_array($colaborador_data)) {
         $foto_url = $colaborador_data['ruta_foto_perfil'];
         $pdf_url = $colaborador_data['ruta_historial_academico_pdf'];
 
         if (!empty($foto_url)) {
-            $base_foto_name = basename($foto_url);
-            if (file_exists(UPLOAD_DIR_FOTOS . 'original_' . $base_foto_name)) {
-                unlink(UPLOAD_DIR_FOTOS . 'original_' . $base_foto_name);
+            $base_foto_name = basename($foto_url); // 'original_foto_XYZ.jpg'
+            // Eliminar la imagen original redimensionada
+            if (file_exists(UPLOAD_DIR_FOTOS . $base_foto_name)) {
+                @unlink(UPLOAD_DIR_FOTOS . $base_foto_name);
             }
-            if (file_exists(UPLOAD_DIR_FOTOS . 'thumb_' . $base_foto_name)) {
-                unlink(UPLOAD_DIR_FOTOS . 'thumb_' . $base_foto_name);
+            // Eliminar la miniatura
+            if (file_exists(UPLOAD_DIR_FOTOS . 'thumb_' . $base_foto_name)) { // Esto espera 'thumb_original_foto_XYZ.jpg'
+                @unlink(UPLOAD_DIR_FOTOS . 'thumb_' . $base_foto_name);
             }
         }
         if (!empty($pdf_url)) {
             $base_pdf_name = basename($pdf_url);
             if (file_exists(UPLOAD_DIR_PDFS . $base_pdf_name)) {
-                unlink(UPLOAD_DIR_PDFS . $base_pdf_name);
+                @unlink(UPLOAD_DIR_PDFS . $base_pdf_name);
             }
         }
         return true;
     }
     return false;
 }
-
 ?>

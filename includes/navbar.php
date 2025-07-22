@@ -4,6 +4,7 @@ require_once __DIR__ . '/../usuarios/funciones.php';
 
 // Definir el estado de administrador una vez para usarlo en las condiciones
 $current_user_is_admin = esAdministrador();
+$current_user_is_rrhh = esRRHH(); 
 
 $base_url = '/Proyecto_php/'; // ¡AJUSTA ESTA LÍNEA A LA RUTA BASE DE TU PROYECTO!
 
@@ -35,9 +36,12 @@ if (!isset($current_page)) {
                 </li>
                 <?php endif; ?>
 
+                <?php if ($current_user_is_admin || $current_user_is_rrhh): // <-- NUEVA CONDICIÓN PARA COLABORADORES ?>
                 <li class="nav-item">
                     <a class="nav-link <?php echo ($current_page == 'colaboradores') ? 'active' : ''; ?>" href="<?php echo $base_url; ?>colaboradores/index.php">Módulo de Colaboradores</a>
                 </li>
+                <?php endif; ?>
+
                 <li class="nav-item">
                     <a class="nav-link" href="#">Módulo de Cargos</a>
                 </li>

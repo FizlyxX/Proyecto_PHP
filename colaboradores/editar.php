@@ -2,18 +2,17 @@
 session_start();
 
 require_once '../config.php';
-require_once 'funciones.php';
-require_once '../classes/Footer.php';
-require_once '../includes/navbar.php';
+require_once 'funciones.php'; 
+require_once '../classes/Footer.php'; 
+
+$current_page = 'colaboradores';
+require_once '../includes/navbar.php'; 
 
 // Verificar si el usuario ha iniciado sesión y tiene permisos (ej. RRHH o Administrador)
-if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true || !esAdministrador()) { // O !esRRHH()
-    header("location: ../index.php");
+if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true || (!esAdministrador() && !esRRHH())) {
+    header("location: ../index.php"); // Redirigir al login si no tiene permisos
     exit;
 }
-
-// Definir la página actual para que el navbar la resalte
-$current_page = 'colaboradores';
 
 // Inicializar variables del formulario y errores
 $id_colaborador = $primer_nombre = $segundo_nombre = $primer_apellido = $segundo_apellido = "";
@@ -22,13 +21,14 @@ $telefono = $celular = $direccion = "";
 $primer_nombre_err = $primer_apellido_err = $sexo_err = $identificacion_err = $fecha_nacimiento_err = "";
 $correo_personal_err = $telefono_err = $celular_err = $direccion_err = "";
 $foto_perfil_err = $historial_academico_pdf_err = "";
-$current_foto_path = $current_pdf_path = ""; // Rutas de archivos actuales
+$current_foto_path = ''; // Para la URL de la miniatura a mostrar en el HTML
+$current_pdf_path = '';  // Para la URL del PDF a mostrar en el HTML
 
-// Procesar el formulario cuando se envía
+// Procesar el formulario cuando se envía (método POST)
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $id_colaborador = $_POST['id_colaborador'];
 
-    // 1. Recopilar y sanear datos
+    // 1. Recopilar y sanear datos de texto
     $primer_nombre = trim($_POST['primer_nombre']);
     $segundo_nombre = trim($_POST['segundo_nombre']);
     $primer_apellido = trim($_POST['primer_apellido']);
@@ -41,12 +41,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $celular = trim($_POST['celular']);
     $direccion = trim($_POST['direccion']);
 
-    // Obtener rutas de archivos actuales (ocultos en el formulario)
-    $current_foto_path = $_POST['current_foto_path'];
-    $current_pdf_path = $_POST['current_pdf_path'];
-
-
-    // 2. Validar datos
+    // 2. Validar datos de texto
     if (empty($primer_nombre)) { $primer_nombre_err = "Ingrese el primer nombre."; }
     if (empty($primer_apellido)) { $primer_apellido_err = "Ingrese el primer apellido."; }
     if (empty($sexo)) { $sexo_err = "Seleccione el sexo."; }
@@ -70,7 +65,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Si no hay errores de validación de texto, proceder con archivos y BD
     if (empty($primer_nombre_err) && empty($primer_apellido_err) && empty($sexo_err) && empty($identificacion_err) && empty($fecha_nacimiento_err)) {
         
-        $colaborador_data = [
+        $colaborador_data_for_update = [ 
             'primer_nombre' => $primer_nombre,
             'segundo_nombre' => $segundo_nombre,
             'primer_apellido' => $primer_apellido,
@@ -84,52 +79,81 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             'direccion' => $direccion
         ];
 
-        $resultado_actualizacion = actualizarColaborador($link, $id_colaborador, $colaborador_data, 'foto_perfil', 'historial_academico_pdf');
+        // Llamar a la función para actualizar el colaborador, que también maneja las subidas de archivos
+        // La función actualizarColaborador() internamente obtiene las rutas antiguas de la BD.
+        $resultado_actualizacion = actualizarColaborador($link, $id_colaborador, $colaborador_data_for_update, 'foto_perfil', 'historial_academico_pdf');
 
         if (isset($resultado_actualizacion['success'])) {
             header("location: index.php?msg=actualizado");
             exit();
         } else {
-            $error_type = isset($resultado_actualizacion['error']) ? $resultado_actualizacion['error'] : 'Error desconocido al actualizar.';
-            if (strpos($error_type, 'identificación') !== false) {
-                 $identificacion_err = $error_type;
-            } else if (strpos($error_type, 'foto') !== false || strpos($error_type, 'PDF') !== false) {
-                $foto_perfil_err = $error_type;
+            // Manejar errores específicos devueltos por actualizarColaborador
+            $error_message_from_func = isset($resultado_actualizacion['error']) ? $resultado_actualizacion['error'] : 'Error desconocido al actualizar.';
+            
+            if (strpos($error_message_from_func, 'identificación') !== false) {
+                 $identificacion_err = $error_message_from_func;
+                 // No redirigir, se mostrará el error en el formulario actual
+            } else if (strpos($error_message_from_func, 'foto') !== false || strpos($error_message_from_func, 'PDF') !== false) {
+                $foto_perfil_err = $error_message_from_func; // Se mostrará este error
             } else {
-                echo '<div class="alert alert-danger">Error: ' . htmlspecialchars($error_type) . '</div>';
+                // Para otros errores de DB que no son de archivos/identificación
+                echo '<div class="alert alert-danger">Error: ' . htmlspecialchars($error_message_from_func) . '</div>';
             }
+            // Si hay errores que se muestran en la página (no redirección), necesitas cerrar $link aquí
+            mysqli_close($link); 
         }
+    } else { // Si hay errores de validación de texto de formulario
+        // Si no se redirige, y hay errores de texto, la conexión debe cerrarse.
+        mysqli_close($link);
     }
-    mysqli_close($link);
 
-} else { // Si no es POST, cargar datos del colaborador para el formulario
+} else { // Si no es POST, cargar datos del colaborador para el formulario (GET request)
     if (isset($_GET["id"]) && !empty(trim($_GET["id"]))) {
         $id_colaborador = trim($_GET["id"]);
-        $colaborador_data = getColaboradorById($link, $id_colaborador);
+        $colaborador_data = getColaboradorById($link, $id_colaborador); // Este es el $colaborador_data original del GET
 
         if ($colaborador_data) {
-            $primer_nombre = $colaborador_data['primer_nombre'];
-            $segundo_nombre = $colaborador_data['segundo_nombre'];
-            $primer_apellido = $colaborador_data['primer_apellido'];
-            $segundo_apellido = $colaborador_data['segundo_apellido'];
-            $sexo = $colaborador_data['sexo'];
-            $identificacion = $colaborador_data['identificacion'];
-            $fecha_nacimiento = $colaborador_data['fecha_nacimiento'];
-            $correo_personal = $colaborador_data['correo_personal'];
-            $telefono = $colaborador_data['telefono'];
-            $celular = $colaborador_data['celular'];
-            $direccion = $colaborador_data['direccion'];
-            $current_foto_path = $colaborador_data['ruta_foto_perfil'];
-            $current_pdf_path = $colaborador_data['ruta_historial_academico_pdf'];
+            // Asignación de variables, usando coalescencia nula para campos que pueden ser NULL en BD
+            $primer_nombre = $colaborador_data['primer_nombre'] ?? '';
+            $segundo_nombre = $colaborador_data['segundo_nombre'] ?? '';
+            $primer_apellido = $colaborador_data['primer_apellido'] ?? '';
+            $segundo_apellido = $colaborador_data['segundo_apellido'] ?? '';
+            $sexo = $colaborador_data['sexo'] ?? '';
+            $identificacion = $colaborador_data['identificacion'] ?? '';
+            $fecha_nacimiento = $colaborador_data['fecha_nacimiento'] ?? '';
+            $correo_personal = $colaborador_data['correo_personal'] ?? '';
+            $telefono = $colaborador_data['telefono'] ?? '';
+            $celular = $colaborador_data['celular'] ?? '';
+            $direccion = $colaborador_data['direccion'] ?? '';
+            
+            // Rutas de archivos obtenidas directamente de la base de datos (con coalesce para NULL)
+            $current_foto_path_from_db = $colaborador_data['ruta_foto_perfil'] ?? ''; 
+            $current_pdf_path_from_db = $colaborador_data['ruta_historial_academico_pdf'] ?? '';
+
+            // Construir la URL de la miniatura para mostrar en el HTML
+            if (!empty($current_foto_path_from_db)) {
+                 $base_foto_name = basename($current_foto_path_from_db);
+                 // La miniatura debe tener el formato 'thumb_original_foto_XXXX.jpeg'
+                 $current_foto_path = URL_BASE_FOTOS . 'thumb_' . $base_foto_name;
+            } else {
+                $current_foto_path = ''; // No hay foto, la ruta está vacía
+            }
+            // La ruta del PDF es directa, solo asegúrate de que esté vacía si es NULL
+            $current_pdf_path = $current_pdf_path_from_db;
+            
         } else {
-            header("location: index.php?msg=error");
+            // Colaborador no encontrado, redirigir
+            mysqli_close($link); // Cierra conexión antes de redirigir
+            header("location: index.php?msg=error_notfound");
             exit();
         }
     } else {
+        // ID de colaborador no proporcionado en la URL, redirigir
+        mysqli_close($link); // Cierra conexión antes de redirigir
         header("location: index.php?msg=error");
         exit();
     }
-    mysqli_close($link);
+    mysqli_close($link); // Cierra la conexión si la página se carga por GET y todo fue bien.
 }
 ?>
 
@@ -140,12 +164,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Editar Colaborador - Capital Humano</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-    <link rel="stylesheet" href="../css/style.css">
-    <style>
-        body { display: flex; flex-direction: column; min-height: 100vh; }
-        .content-wrapper { flex: 1; padding-bottom: 50px; }
-        .form-group { margin-bottom: 1rem; }
-        .invalid-feedback { display: block; }
+    <link rel="stylesheet" href="../css/app_style.css"> <style>
         .current-file-preview {
             max-width: 150px;
             max-height: 150px;
@@ -159,18 +178,26 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             margin-top: 10px;
             display: inline-block;
         }
+         .footer { 
+            background-color: #f8f9fa;
+            border-top: 1px solid #e9ecef;
+            text-align: center;
+            padding: 20px;
+            color: #6c757d;
+            font-size: 0.9rem;
+            width: 100%;
+        }
     </style>
 </head>
 <body>
+    <?php require_once '../includes/navbar.php'; ?>
+
     <div class="container mt-4 content-wrapper">
         <h2>Editar Colaborador</h2>
         <p>Modifique los datos del colaborador.</p>
 
         <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="post" enctype="multipart/form-data">
             <input type="hidden" name="id_colaborador" value="<?php echo htmlspecialchars($id_colaborador); ?>">
-            <input type="hidden" name="current_foto_path" value="<?php echo htmlspecialchars($current_foto_path); ?>">
-            <input type="hidden" name="current_pdf_path" value="<?php echo htmlspecialchars($current_pdf_path); ?>">
-
             <div class="row">
                 <div class="col-md-6">
                     <div class="mb-3 <?php echo (!empty($primer_nombre_err)) ? 'has-error' : ''; ?>">
@@ -286,9 +313,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 <a href="index.php" class="btn btn-secondary">Cancelar</a>
             </div>
         </form>
-    </div>
-
-    <?php
+    </div> <?php
     if (class_exists('Footer')) {
         $footer = new Footer();
         $footer->render();
